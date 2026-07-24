@@ -11,6 +11,15 @@ Talk or type. Folio searches the live web, opens sources in a dossier, and keeps
 
 ---
 
+## Links
+
+- **GitHub:** https://github.com/JamesKevinJones/folio  
+- **Vercel (companion UI):** https://folio-nine-gamma.vercel.app  
+
+> The Vercel site hosts the Folio HUD. Point `VITE_API_BASE` at a running Folio sidecar for live chat, or run the full stack locally as below.
+
+---
+
 ## Why Folio
 
 Most “AI assistants” on GitHub are glowing orbs, MCU catchphrases, and stub tools. Folio is built the other way around:
