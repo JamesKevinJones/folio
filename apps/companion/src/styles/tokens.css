@@ -1,0 +1,88 @@
+:root {
+  --folio-ink: #0b0c0f;
+  --folio-ink-elevated: #12141a;
+  --folio-text: #f2f0ea;
+  --folio-muted: #8b909a;
+  --folio-line: rgba(242, 240, 234, 0.12);
+  --folio-yellow: #f5e74a;
+  --folio-yellow-dim: #c4b83a;
+  --folio-danger: #e85d4c;
+  --folio-display: "Syne", sans-serif;
+  --folio-body: "IBM Plex Sans", sans-serif;
+  --folio-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --folio-radius: 0;
+  --folio-space: 8px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: var(--folio-body);
+  color: var(--folio-text);
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(245, 231, 74, 0.06), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 90% 100%, rgba(140, 160, 200, 0.05), transparent 50%),
+    var(--folio-ink);
+  overflow: hidden;
+}
+
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: 9999;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 1px solid var(--folio-line);
+  background: transparent;
+  color: var(--folio-text);
+  padding: calc(var(--folio-space) * 1.25) calc(var(--folio-space) * 2);
+}
+
+button:hover {
+  border-color: var(--folio-yellow-dim);
+}
+
+button.primary {
+  background: var(--folio-yellow);
+  color: var(--folio-ink);
+  border-color: var(--folio-yellow);
+  font-weight: 600;
+}
+
+button.primary:hover {
+  filter: brightness(1.05);
+}
+
+button.active {
+  border-color: var(--folio-yellow);
+  color: var(--folio-yellow);
+}
+
+a {
+  color: var(--folio-yellow);
+}

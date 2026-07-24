@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cd apps/companion && npm install && npm run build",
+  "outputDirectory": "apps/companion/dist",
+  "installCommand": "cd apps/companion && npm install",
+  "framework": "vite",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

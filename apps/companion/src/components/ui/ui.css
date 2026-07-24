@@ -1,0 +1,96 @@
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  background: var(--folio-ink);
+  text-align: center;
+  transition: opacity 0.45s ease, visibility 0.45s ease;
+}
+
+.boot-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.boot-mark {
+  font-family: var(--folio-display);
+  font-size: 72px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--folio-yellow);
+  line-height: 1;
+}
+
+.boot-loading {
+  font-family: var(--folio-mono);
+  letter-spacing: 0.35em;
+  font-size: 12px;
+  color: var(--folio-text);
+}
+
+.boot-sub {
+  font-family: var(--folio-mono);
+  font-size: 11px;
+  color: var(--folio-muted);
+}
+
+.idle-hero {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  place-content: center;
+  padding: 24px 32px 16px;
+  text-align: left;
+}
+
+.idle-hero h1 {
+  margin: 0;
+  display: grid;
+  font-family: var(--folio-display);
+  font-weight: 800;
+  line-height: 0.92;
+  font-size: clamp(40px, 7vw, 84px);
+  letter-spacing: -0.02em;
+}
+
+.idle-hero h1 span:last-child {
+  color: var(--folio-muted);
+  font-size: 0.55em;
+  letter-spacing: 0.02em;
+}
+
+.idle-hero p {
+  margin: 20px 0 0;
+  font-family: var(--folio-mono);
+  color: var(--folio-yellow);
+  font-size: 13px;
+}
+
+.idle-hero .hint-line {
+  margin-top: 12px;
+  color: var(--folio-muted);
+  font-size: 12px;
+}
+
+.bracket {
+  font-family: var(--folio-mono);
+  font-size: 12px;
+  color: var(--folio-yellow);
+  letter-spacing: 0.04em;
+}
+
+.counter {
+  font-family: var(--folio-mono);
+  font-size: 12px;
+  color: var(--folio-muted);
+}
+
+.counter + .counter::before {
+  content: " | ";
+  color: var(--folio-line);
+}
