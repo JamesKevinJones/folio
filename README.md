@@ -1,193 +1,119 @@
 # Folio
 
-### Ask anything. See the sources.
+A research desk that answers with its sources. Ask a question by text or voice:
+Folio searches the web, reads pages and news feeds through Gemini tool calls, and
+lists every source it used in a dossier next to the answer.
 
-**Folio** is a personal research desk — not another Jarvis cosplay.  
-Talk or type. Folio searches the live web, opens sources in a dossier, and keeps every claim on the record.
+[![ci](https://github.com/JamesKevinJones/folio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/JamesKevinJones/folio/actions/workflows/ci.yml)
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-<p align="center">
-  <img src="docs/folio-banner.svg" alt="Folio — research desk" width="100%" />
-</p>
+![Folio running locally: chat pane on the left, the empty Source Dossier on the right](docs/img/folio-local.png)
 
----
+<!-- TODO(kevin): add docs/img/folio-answer.gif, a real local run of one research question, once a Gemini key is in .env. -->
 
-## Links
+*Running locally with `uv run folio`, before the first question.*
 
-- **GitHub:** https://github.com/JamesKevinJones/folio  
-- **Vercel (companion UI):** https://folio-nine-gamma.vercel.app  
+**UI preview:** [folio-nine-gamma.vercel.app](https://folio-nine-gamma.vercel.app) hosts
+the interface only. No API runs behind it, so questions asked there fail. Run Folio
+locally (below) to get answers.
 
-> The Vercel site hosts the Folio HUD. Point `VITE_API_BASE` at a running Folio sidecar for live chat, or run the full stack locally as below.
+## Why
 
----
-
-## Why Folio
-
-Most “AI assistants” on GitHub are glowing orbs, MCU catchphrases, and stub tools. Folio is built the other way around:
-
-| Typical clone | Folio |
-| --- | --- |
-| Persona theater | Evidence-first research desk |
-| Hidden tool calls | Transparent tool strip + Source Dossier |
-| Invented headlines | Live search, RSS, and URL fetch |
-| Paid voice APIs required | Free browser voice (Chrome / Edge) |
-| Purple neon HUD | Pixel-yellow editorial UI |
-
-**Tagline:** *Ask anything. See the sources.*
-
----
-
-## Features
-
-- **Dual-pane HUD** — Chat on the left, **Source Dossier** on the right  
-- **Real research tools** — web search, URL fetch, world & finance news  
-- **Citations required** — every research answer can attach clickable sources  
-- **Free voice** — hold-to-talk + spoken replies via Web Speech (no OpenAI key)  
-- **Brief export** — one-click Markdown of question, answer, and sources  
-- **Design language** — `LOADING` splash, stacked display type, `MSG | SRC` counters, bracket states `[listening]`, Grid / Marquee dossier views  
-
----
-
-## Quick start
-
-### Prerequisites
-
-- Python **3.11+**
-- [uv](https://docs.astral.sh/uv/)
-- Node **20+**
-- A [Google AI Studio](https://aistudio.google.com/) key (`GOOGLE_API_KEY`)
-
-### Install
-
-```bash
-git clone https://github.com/JamesKevinJones/folio.git
-cd folio
-
-cp .env.example .env
-# set GOOGLE_API_KEY=
-
-uv sync --extra dev
-cd apps/companion && npm install && cd ../..
-```
-
-### Run (recommended)
-
-```bash
-# Terminal 1 — API + agent
-uv run folio
-
-# Terminal 2 — UI (hot reload)
-cd apps/companion && npm run dev
-```
-
-Open **http://127.0.0.1:5173**
-
-Or build the UI into the sidecar and use one URL:
-
-```bash
-cd apps/companion && npm run build && cd ../..
-uv run folio
-```
-
-Open **http://127.0.0.1:8787**
-
----
-
-## Environment
-
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `GOOGLE_API_KEY` | Yes | Gemini chat + tools |
-| `LLM_MODEL` | No | Default `gemini-flash-latest` |
-| `TAVILY_API_KEY` | No | Higher-quality search |
-| `OPENAI_API_KEY` | No | Legacy only (browser voice is default) |
-
-Never commit `.env`. Use `.env.example` as the template.
-
----
+A chat answer about the news is only as good as the pages behind it, and most chat
+UIs hide those. Folio shows each tool call as it runs and keeps the sources in a
+separate pane, numbered, so you can open and check them. Once tools have run, the
+next model call has its tools switched off, which forces a written answer instead
+of another round of searching.
 
 ## How it works
 
-```text
-You (text / mic)
-    │
-    ▼
-Folio companion (React HUD)
-    │  HTTP + WebSocket
-    ▼
-FastAPI sidecar
-    │
-    ├─ Gemini tool loop
-    ├─ search_web / fetch_url / news RSS
-    └─ session log + Markdown briefs
+```mermaid
+flowchart LR
+    UI["React companion<br/>(chat + Source Dossier)"] -->|"POST /api/chat"| API[FastAPI]
+    API --> Loop["Gemini loop<br/>one tool round, then answer"]
+    Loop --> T1[search_web<br/>Tavily or DuckDuckGo]
+    Loop --> T2[fetch_url]
+    Loop --> T3[get_world_news<br/>get_finance_news<br/>RSS]
+    Loop --> Store["data/sessions/*.jsonl<br/>data/briefs/*.md"]
 ```
 
-Research questions run tools, then Folio forces a **text answer** so you get sources in the dossier — not an endless tool loop.
+- **Loop** (`folio/agent/loop.py`): the first Gemini call may request tools, which
+  run together. Duplicate calls are dropped, and sources are deduplicated by URL and
+  numbered. The second call has tools switched off and must answer in text.
+- **Tools** (`folio/tools/research.py`): web search (Tavily with a key, DuckDuckGo
+  without), page fetch with scripts and navigation stripped, and world and finance
+  RSS feeds.
+- **Voice**: the browser's Web Speech API, so no speech key is needed.
+- **Briefs**: one click exports the question, answer and sources as Markdown.
 
----
+## Results
 
-## Project layout
+No quality numbers yet. [docs/EVAL_PLAN.md](docs/EVAL_PLAN.md) defines the three to
+measure first: citation coverage, source validity, and cost and latency per answer.
 
-```text
-folio/
-├── apps/companion/     # React HUD (Folio Design Language)
-├── folio/              # FastAPI agent, tools, voice adapters
-├── tests/              # pytest
-├── docs/               # banner + assets
-└── pyproject.toml
-```
+## Quickstart
 
----
-
-## Deploy
-
-### GitHub
-
-This repo is the source of truth. Clone, configure `.env`, run locally for the full research desk (API + tools).
-
-### Vercel (companion UI)
-
-The **companion** deploys as a static app on Vercel for the public face of Folio.
+Needs Python 3.11+, [uv](https://docs.astral.sh/uv/), Node 20+ and a free
+[Google AI Studio](https://aistudio.google.com/) key.
 
 ```bash
-cd apps/companion
-npx vercel --prod
+git clone https://github.com/JamesKevinJones/folio.git && cd folio
+cp .env.example .env                       # set GOOGLE_API_KEY
+uv sync
+cd apps/companion && npm ci && npm run build && cd ../..
+uv run folio                               # http://127.0.0.1:8787
 ```
 
-Set `VITE_API_BASE` in the Vercel project to your running Folio API origin (for example a tunnel or cloud host of `uv run folio`). Without an API base, the hosted UI is a shell — chat needs the sidecar.
+`.env.example` lists every optional setting (model, Tavily, data folder). For UI hot
+reload, run `npm run dev` in `apps/companion` alongside `uv run folio` and open
+`http://127.0.0.1:5173`.
 
-Local full stack remains the supported path for research tools.
-
----
-
-## Verification
-
-- [ ] `GET /api/health` → `llm_ready: true` when the key is set  
-- [ ] “What’s happening in the world?” → headlines + dossier links  
-- [ ] A factual question → live search sources (not stubs)  
-- [ ] Paste a URL → fetch + cite that URL  
-- [ ] Hold mic (Chrome/Edge) → transcript → spoken reply  
-- [ ] Export brief → Markdown download  
+## Tests and CI
 
 ```bash
-uv run pytest -q
+uv sync --extra dev
+uv run pytest -q          # 17 tests
+uv run ruff check folio tests
 ```
 
----
+The tests replace Gemini with a scripted client and the network with mock
+transports, so they need no keys. A shared fixture points `data/` at a temp folder
+and blanks every key, even if your `.env` has real ones. They cover the tool loop,
+session storage, brief export, `/api/health`, page fetching and the search fallback.
 
-## Stack
+[CI](.github/workflows/ci.yml) runs ruff and pytest, then typechecks and builds the
+companion, on every push and pull request.
 
-- **UI** — React + Vite, Folio Design Language  
-- **API** — FastAPI + WebSocket events  
-- **LLM** — Google Gemini (`gemini-flash-latest`)  
-- **Search** — DuckDuckGo (optional Tavily)  
-- **Voice** — Browser Web Speech API  
+## What broke
 
----
+- **Brief export could write outside `data/briefs`.** `POST /api/briefs/export` built
+  the filename from the request's `session_id`, so `"../../x"` wrote a Markdown file
+  of the caller's choosing elsewhere on disk. The session log a few lines above
+  already sanitised the id; export now uses the same function, with a regression test.
+- **Debug logging shipped.** Leftover instrumentation appended every chat to
+  `debug-*.log` in the repo root. Removed.
+- **CI was deleted.** The original workflow came out in `de2c384` because the push
+  token lacked workflow scope, not because it failed. It's restored, with a UI build
+  job added.
+- **The hosted UI looked broken.** With no API behind the Vercel build, a question
+  showed `Unexpected token '<'`, which is the page's own HTML parsed as JSON. It's now
+  labelled as a UI preview rather than a live demo.
 
-## License
+## Limitations
 
-MIT — use it, fork it, cite your sources.
+- **`fetch_url` fetches any http(s) address the model picks**, including `localhost`
+  and private ranges. Fine on your own laptop; it needs a private-address block before
+  Folio is hosted anywhere.
+- **CORS allows every origin** and there's no auth. It's a single-user local app.
+- **One tool round per question.** A research question costs two Gemini calls (one
+  picks tools, one answers), and a question needing no tools costs one. It's cheap,
+  but Folio can't follow a lead it finds in the first round of results. The free
+  tier's daily limit caps how much you can ask.
+- **Voice** needs a browser with the Web Speech API (Chrome or Edge).
+- **DuckDuckGo search** has no key and can rate-limit. Set `TAVILY_API_KEY` for steadier
+  results.
 
----
+## Licence
 
-<p align="center"><b>FOLIO</b> · research desk<br/><i>Ask anything. See the sources.</i></p>
+[MIT](LICENSE)
