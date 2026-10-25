@@ -8,9 +8,9 @@ the README makes no quality claims. These are the three numbers to measure next.
 - **Metric:** share of answers to research questions that attach at least one
   dossier source, and share of factual sentences that point at one.
 - **How:** a fixed set of 20 questions (news, facts, "summarise this URL"), run
-  through `run_chat`, scoring `sources` and the reply text. One run costs roughly 2
-  to 4 Gemini requests per question, so the set needs a paid key or several days
-  of the free tier's daily limit.
+  through `run_chat`, scoring `sources` and the reply text. A research question
+  costs two Gemini requests (one tool round, then a forced answer), so one run is
+  about 40 requests. Check that against the key's daily limit before running.
 
 ## 2. Source validity
 
