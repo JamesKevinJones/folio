@@ -69,11 +69,17 @@ uv run folio                               # http://127.0.0.1:8787
 reload, run `npm run dev` in `apps/companion` alongside `uv run folio` and open
 `http://127.0.0.1:5173`.
 
+Or with Docker, which builds the UI and runs both on one port as a non-root user:
+
+```bash
+docker build -t folio . && docker run --env-file .env -p 8787:8787 folio
+```
+
 ## Tests and CI
 
 ```bash
 uv sync --extra dev
-uv run pytest -q          # 17 tests
+uv run pytest -q          # 18 tests
 uv run ruff check folio tests
 ```
 
@@ -87,6 +93,12 @@ companion, on every push and pull request.
 
 ## What broke
 
+- **The UI route could serve any file on disk.** The catch-all route that serves the
+  built UI joined the request path onto the build folder without checking where it
+  ended up. Paths arrive percent-decoded, so `GET /..%2F..%2F..%2F.env` returned the
+  repo's `.env`, Gemini key included. It now resolves the path and refuses anything
+  outside the build folder. A regression test covers it, and a probe against a real
+  uvicorn server leaked `pyproject.toml` before the fix and not after.
 - **Brief export could write outside `data/briefs`.** `POST /api/briefs/export` built
   the filename from the request's `session_id`, so `"../../x"` wrote a Markdown file
   of the caller's choosing elsewhere on disk. The session log a few lines above
