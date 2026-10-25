@@ -1,0 +1,9 @@
+.env
+.env.*
+.git
+.venv
+data
+*.log
+**/__pycache__
+apps/companion/node_modules
+apps/companion/dist
