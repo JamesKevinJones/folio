@@ -8,9 +8,13 @@ from typing import Any
 from folio.config import get_settings
 
 
+def _safe_id(session_id: str) -> str:
+    """session_id arrives from the HTTP request, so it must never shape a path."""
+    return "".join(c for c in session_id if c.isalnum() or c in ("-", "_")) or "default"
+
+
 def _session_path(session_id: str) -> Path:
-    safe = "".join(c for c in session_id if c.isalnum() or c in ("-", "_")) or "default"
-    return get_settings().data_dir / "sessions" / f"{safe}.jsonl"
+    return get_settings().data_dir / "sessions" / f"{_safe_id(session_id)}.jsonl"
 
 
 def append_event(session_id: str, event: dict[str, Any]) -> None:
@@ -70,6 +74,6 @@ def export_brief_markdown(
                 lines.append(f"   - {snippet}")
     markdown = "\n".join(lines) + "\n"
     stamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
-    path = get_settings().data_dir / "briefs" / f"{session_id}-{stamp}.md"
+    path = get_settings().data_dir / "briefs" / f"{_safe_id(session_id)}-{stamp}.md"
     path.write_text(markdown, encoding="utf-8")
     return markdown, path

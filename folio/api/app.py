@@ -170,7 +170,8 @@ def mount_companion(application: FastAPI) -> None:
 
     @application.get("/{full_path:path}")
     async def spa(full_path: str) -> FileResponse:
-        candidate = dist / full_path
-        if candidate.is_file():
+        # full_path arrives percent-decoded, so "..%2F" must not escape dist.
+        candidate = (dist / full_path).resolve()
+        if candidate.is_relative_to(dist.resolve()) and candidate.is_file():
             return FileResponse(candidate)
         return FileResponse(dist / "index.html")

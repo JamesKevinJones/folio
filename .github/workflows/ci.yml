@@ -1,0 +1,46 @@
+name: ci
+
+# Restores the workflow removed in de2c384, which was only waiting on a token
+# with workflow scope. Tests mock Gemini and the network, so no secrets.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+          enable-cache: true
+      - name: Install
+        run: uv sync --locked --extra dev
+      - name: Ruff
+        run: uv run ruff check folio tests
+      - name: Pytest
+        run: uv run pytest -q
+
+  companion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/companion
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/companion/package-lock.json
+      - run: npm ci
+      - name: Typecheck and build
+        run: npm run build

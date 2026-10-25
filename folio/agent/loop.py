@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import json
-import time
-from pathlib import Path
 from typing import Any
 
 from google import genai
@@ -14,29 +12,6 @@ from folio.config import get_settings
 from folio.memory import append_event
 from folio.schemas import ChatResponse, Source, ToolTrace
 from folio.tools import TOOL_SPECS, run_tool
-
-# #region agent log
-_DEBUG_LOG = Path(__file__).resolve().parents[2] / "debug-30be74.log"
-
-
-def _dbg(hypothesis_id: str, location: str, message: str, data: dict[str, Any]) -> None:
-    try:
-        payload = {
-            "sessionId": "30be74",
-            "runId": "post-fix",
-            "hypothesisId": hypothesis_id,
-            "location": location,
-            "message": message,
-            "data": data,
-            "timestamp": int(time.time() * 1000),
-        }
-        with _DEBUG_LOG.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(payload) + "\n")
-    except Exception:
-        pass
-
-
-# #endregion
 
 
 def _gemini_tools() -> list[types.Tool]:
@@ -70,18 +45,6 @@ def _finish(
     session_id: str,
     path: str,
 ) -> ChatResponse:
-    # #region agent log
-    _dbg(
-        "A",
-        "loop.py:run_chat:finish",
-        path,
-        {
-            "reply_len": len(reply),
-            "sources": len(sources),
-            "traces": len(traces),
-        },
-    )
-    # #endregion
     append_event(
         session_id,
         {
@@ -117,18 +80,6 @@ def _fallback_from_tools(traces: list[ToolTrace], sources: list[Source]) -> str:
 
 async def run_chat(message: str, session_id: str = "default") -> ChatResponse:
     settings = get_settings()
-    # #region agent log
-    _dbg(
-        "A",
-        "loop.py:run_chat:entry",
-        "chat_start",
-        {
-            "model": settings.llm_model,
-            "msg_len": len(message),
-            "has_key": bool(settings.google_api_key),
-        },
-    )
-    # #endregion
     if not settings.google_api_key:
         return ChatResponse(
             reply=(
@@ -156,9 +107,6 @@ async def run_chat(message: str, session_id: str = "default") -> ChatResponse:
             if force_text:
                 # Tools already ran — force a written answer (no tool declarations).
                 config_kwargs["tool_config"] = _tool_config("NONE")
-                # #region agent log
-                _dbg("A", "loop.py:run_chat:force_none", "forced_text_turn", {"sources": len(sources)})
-                # #endregion
             else:
                 config_kwargs["tools"] = _gemini_tools()
                 config_kwargs["tool_config"] = _tool_config("AUTO")
@@ -231,18 +179,6 @@ async def run_chat(message: str, session_id: str = "default") -> ChatResponse:
             force_text = True
 
     except genai_errors.ClientError as exc:
-        # #region agent log
-        _dbg(
-            "A",
-            "loop.py:run_chat:client_error",
-            "gemini_client_error",
-            {
-                "model": settings.llm_model,
-                "code": getattr(exc, "code", None),
-                "err": str(exc)[:300],
-            },
-        )
-        # #endregion
         return ChatResponse(
             reply=(
                 f"Gemini API error while using model '{settings.llm_model}': {exc}. "
@@ -252,14 +188,6 @@ async def run_chat(message: str, session_id: str = "default") -> ChatResponse:
             session_id=session_id,
         )
     except Exception as exc:
-        # #region agent log
-        _dbg(
-            "B",
-            "loop.py:run_chat:unexpected",
-            "unexpected_error",
-            {"type": type(exc).__name__, "err": str(exc)[:300]},
-        )
-        # #endregion
         return ChatResponse(
             reply=f"Something went wrong talking to the model: {exc}",
             session_id=session_id,
