@@ -1,9 +1,27 @@
 import httpx
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from folio.api.app import app
+from folio.api.app import app, mount_companion
+from folio.config import get_settings
 from folio.memory import session
 from folio.tools import research
+
+
+def test_the_ui_route_cannot_serve_files_outside_the_build(tmp_path, monkeypatch):
+    dist = tmp_path / "repo" / "apps" / "companion" / "dist"
+    dist.mkdir(parents=True)
+    (dist / "index.html").write_text("<html>ui</html>")
+    (tmp_path / "repo" / ".env").write_text("GOOGLE_API_KEY=leaked")
+    monkeypatch.setenv("COMPANION_DIST", str(dist))
+    get_settings.cache_clear()
+    ui = FastAPI()
+    mount_companion(ui)
+
+    with TestClient(ui) as client:
+        response = client.get("/..%2F..%2F..%2F.env")
+
+    assert "leaked" not in response.text
 
 
 def test_session_ids_cannot_leave_the_sessions_folder(isolated_settings):
